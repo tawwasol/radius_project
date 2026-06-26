@@ -1,0 +1,6 @@
+{
+  "name": "MikroRADIUS Dashboard",
+  "description": "منصة تجارية متكاملة لإدارة شبكات مايكروتك عبر سيرفر ريديوس والربط مع تطبيق الهاتف",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
