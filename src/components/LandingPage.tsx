@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Cpu, Smartphone, Users, Zap, Layers, BarChart3, Wifi, Server, Check, ArrowRight, BookOpen } from 'lucide-react';
+import { Shield, Cpu, Smartphone, Users, Zap, Layers, BarChart3, Wifi, Server, Check, ArrowRight, BookOpen, Lock, User, Key, Eye, EyeOff, Edit3, Save, X, RefreshCw } from 'lucide-react';
 
 interface LandingPageProps {
   onEnterApp: (role: 'isp' | 'admin') => void;
@@ -7,6 +7,80 @@ interface LandingPageProps {
 
 export default function LandingPage({ onEnterApp }: LandingPageProps) {
   const [selectedPlan, setSelectedPlan] = useState<string>('business');
+  
+  // Login modal and credentials state
+  const [loginModalType, setLoginModalType] = useState<'admin' | 'isp' | null>(null);
+  const [usernameInput, setUsernameInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  // Editing credentials state
+  const [isEditingCredentials, setIsEditingCredentials] = useState(false);
+  const [editUser, setEditUser] = useState('');
+  const [editPass, setEditPass] = useState('');
+
+  // Load credentials from localStorage or defaults
+  const getStoredCreds = (type: 'admin' | 'isp') => {
+    if (type === 'admin') {
+      const u = localStorage.getItem('saas_admin_username') || 'Admin';
+      const p = localStorage.getItem('saas_admin_password') || 'Asd123Asd1979';
+      return { u, p };
+    } else {
+      const u = localStorage.getItem('saas_isp_username') || 'isp';
+      const p = localStorage.getItem('saas_isp_password') || 'isp';
+      return { u, p };
+    }
+  };
+
+  const openLoginModal = (type: 'admin' | 'isp') => {
+    setLoginModalType(type);
+    const { u, p } = getStoredCreds(type);
+    setEditUser(u);
+    setEditPass(p);
+    setIsEditingCredentials(false);
+    setLoginError('');
+    setUsernameInput('');
+    setPasswordInput('');
+  };
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!loginModalType) return;
+
+    const { u, p } = getStoredCreds(loginModalType);
+
+    if (usernameInput.trim() === u && passwordInput.trim() === p) {
+      setLoginError('');
+      onEnterApp(loginModalType);
+      setLoginModalType(null);
+      setUsernameInput('');
+      setPasswordInput('');
+    } else {
+      setLoginError('اسم المستخدم أو كلمة المرور غير صحيحة! يرجى التحقق من بيانات الدخول والمحاولة مرة أخرى.');
+    }
+  };
+
+  const handleSaveCredentials = () => {
+    if (!loginModalType) return;
+    if (!editUser.trim() || !editPass.trim()) {
+      alert('الرجاء إدخال اسم مستخدم وكلمة مرور صالحة!');
+      return;
+    }
+    if (loginModalType === 'admin') {
+      localStorage.setItem('saas_admin_username', editUser.trim());
+      localStorage.setItem('saas_admin_password', editPass.trim());
+    } else {
+      localStorage.setItem('saas_isp_username', editUser.trim());
+      localStorage.setItem('saas_isp_password', editPass.trim());
+    }
+    alert('تم تحديث بيانات الدخول بنجاح! يمكنك الآن استخدام البيانات الجديدة لتسجيل الدخول.');
+    setIsEditingCredentials(false);
+    
+    // Auto populate the login inputs with the newly saved ones to make it smooth
+    setUsernameInput(editUser.trim());
+    setPasswordInput(editPass.trim());
+  };
 
   const plans = [
     {
@@ -88,13 +162,13 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
 
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => onEnterApp('admin')}
+              onClick={() => openLoginModal('admin')}
               className="px-4 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-900 rounded-lg transition-all border border-transparent hover:border-slate-800"
             >
               بوابة المسؤول (SaaS Admin)
             </button>
             <button 
-              onClick={() => onEnterApp('isp')}
+              onClick={() => openLoginModal('isp')}
               className="px-5 py-2.5 text-sm bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg transition-all hover:shadow-lg hover:shadow-sky-500/20 flex items-center gap-2"
             >
               <span>دخول لوحة تحكم الشبكات</span>
@@ -121,7 +195,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
 
         <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
           <button 
-            onClick={() => onEnterApp('isp')}
+            onClick={() => openLoginModal('isp')}
             className="w-full sm:w-auto px-8 py-4 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-base rounded-xl transition-all shadow-lg hover:shadow-sky-500/25 flex items-center justify-center gap-2"
           >
             <span>ابدأ تجربة المنصة الآن مجاناً</span>
@@ -291,7 +365,7 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
 
               <div className="mt-8 pt-6 border-t border-slate-900">
                 <button 
-                  onClick={() => onEnterApp('isp')}
+                  onClick={() => openLoginModal('isp')}
                   className={`w-full py-3 rounded-xl font-bold transition-all text-sm ${
                     plan.popular 
                       ? 'bg-sky-500 text-slate-950 hover:bg-sky-400 shadow-lg shadow-sky-500/20' 
@@ -355,6 +429,146 @@ export default function LandingPage({ onEnterApp }: LandingPageProps) {
           </div>
         </div>
       </footer>
+
+      {/* Modern Credentials Login and Edit Modal */}
+      {loginModalType && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-800 bg-slate-950/50 flex justify-between items-center">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-sky-500/10 text-sky-400 rounded-lg">
+                  {loginModalType === 'admin' ? <Shield size={20} /> : <Server size={20} />}
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-base">
+                    {loginModalType === 'admin' ? 'بوابة المسؤول (SaaS SuperAdmin)' : 'بوابة المشتركين والشبكات (ISP Portal)'}
+                  </h3>
+                  <span className="text-[10px] text-slate-400 block mt-0.5">يرجى تسجيل الدخول للوصول للوحة التحكم</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setLoginModalType(null)}
+                className="p-1.5 bg-slate-800/50 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-6">
+              
+              {!isEditingCredentials ? (
+                /* LOGIN FORM VIEW */
+                <form onSubmit={handleLoginSubmit} className="space-y-4">
+                  {loginError && (
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-xs font-semibold leading-relaxed">
+                      {loginError}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 block">اسم المستخدم</label>
+                    <div className="relative">
+                      <User className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <input 
+                        type="text"
+                        required
+                        placeholder="أدخل اسم المستخدم..."
+                        value={usernameInput}
+                        onChange={(e) => setUsernameInput(e.target.value)}
+                        className="w-full pl-4 pr-10 py-2.5 bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 block">كلمة المرور</label>
+                    <div className="relative">
+                      <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <input 
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        placeholder="أدخل كلمة المرور..."
+                        value={passwordInput}
+                        onChange={(e) => setPasswordInput(e.target.value)}
+                        className="w-full pl-10 pr-10 py-2.5 bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none transition-colors"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                      >
+                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-3 bg-sky-500 hover:bg-sky-400 text-slate-950 font-black text-sm rounded-xl transition-all shadow-lg shadow-sky-500/10 flex items-center justify-center gap-2 mt-2"
+                  >
+                    <span>تسجيل الدخول</span>
+                    <ArrowRight size={16} />
+                  </button>
+                </form>
+              ) : (
+                /* CHANGE CREDENTIALS VIEW */
+                <div className="space-y-4 animate-in fade-in duration-150">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl text-xs font-semibold leading-relaxed">
+                    تنبيه: أنت تقوم بتعديل بيانات الدخول الخاصة بهذه اللوحة. سيتم حفظ البيانات الجديدة محلياً في المتصفح.
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 block">اسم المستخدم الجديد</label>
+                    <div className="relative">
+                      <User className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <input 
+                        type="text"
+                        required
+                        value={editUser}
+                        onChange={(e) => setEditUser(e.target.value)}
+                        className="w-full pl-4 pr-10 py-2.5 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl text-sm text-slate-100 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-300 block">كلمة المرور الجديدة</label>
+                    <div className="relative">
+                      <Key className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                      <input 
+                        type="text"
+                        required
+                        value={editPass}
+                        onChange={(e) => setEditPass(e.target.value)}
+                        className="w-full pl-4 pr-10 py-2.5 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl text-sm text-slate-100 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={handleSaveCredentials}
+                      className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Save size={14} />
+                      <span>حفظ كلمة المرور الجديدة</span>
+                    </button>
+                    <button
+                      onClick={() => setIsEditingCredentials(false)}
+                      className="px-4 py-2.5 bg-slate-850 hover:bg-slate-800 text-slate-300 font-semibold text-xs rounded-xl transition-colors"
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
